@@ -1,21 +1,39 @@
-// ExampleTest.js
-function ExampleTest() {
-  this.test_thingy = function() {
-    assert(false)
+// TestCase.js
+function TestCase() {
+  this.getTests = function() {
+    // overide in subclass to return array of test method names
+  }
+
+  this.setUp = function() {
+    // overide in subclass to construct test environment
+  }
+
+  this.tearDown = function() {
+    // overide in subclass to deconstruct test environment
   }
 }
 
-ExampleTest.getTests = function() {
+// ExampleTest.js
+ExampleTest.prototype = new TestCase()
+ExampleTest.prototype.constructor = ExampleTest
+function ExampleTest() {
   var tests = [
     "test_thingy"]
-  return tests
+
+  this.getTests = function() {
+    return tests
+  }
+
+  this.test_thingy = function() {
+    assert(false)
+  }
 }
 
 // TestRunner.js
 function TestRunner() {
   var testClasses = []
 
-  this.addTest = function(testClass) {
+  this.addTestClass = function(testClass) {
     testClasses.push(testClass)
   }
 
@@ -26,7 +44,7 @@ function TestRunner() {
   }
 
   function runTestsFromClass(testCaseClass) {
-    var tests = testCaseClass.getTests()
+    var tests = new testCaseClass().getTests()
 
     tests.forEach(function(test) {
       runTest(new testCaseClass(), test)
@@ -34,20 +52,26 @@ function TestRunner() {
   }
 
   function runTest(testCase, testName) {
+    testCase.setUp()
     testCase[testName]()
+    testCase.tearDown()
   }
 }
 
+// AssertionFailedError.js
+function AssertionFailedError(message) {
+  this.name = "AssertionFailedError"
+  this.message = message || "An assertion has failed with no error message"
+}
+AssertionFailedError.prototype = new Error()
+
 // Util.js
 function assert(condition, failMessage) {
-  message = "An assertion has failed with no error message"
-  if(failMessage)
-    message = "An assertion has failed with this error message: " + failMessage 
   if(!condition)
-    throw message
+    throw new AssertionFailedError(failMessage)
 }
 
 // this file
 var runner = new TestRunner()
-runner.addTest(ExampleTest)
+runner.addTestClass(ExampleTest)
 runner.runTests()
