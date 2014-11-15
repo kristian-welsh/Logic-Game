@@ -12,10 +12,30 @@ ExampleTest.getTests = function() {
 }
 
 // TestRunner.js
-function runTests(testClass) {
-  var tests = testClass.getTests()
-  for (var i = 0; i < tests.length; ++i)
-      new testClass()[tests[i]]()
+function TestRunner() {
+  var testClasses = []
+
+  this.addTest = function(testClass) {
+    testClasses.push(testClass)
+  }
+
+  this.runTests = function() {
+    testClasses.forEach(function(testClass) {
+      runTestsFromClass(testClass)
+    })
+  }
+
+  function runTestsFromClass(testCaseClass) {
+    var tests = testCaseClass.getTests()
+
+    tests.forEach(function(test) {
+      runTest(new testCaseClass(), test)
+    })
+  }
+
+  function runTest(testCase, testName) {
+    testCase[testName]()
+  }
 }
 
 // Util.js
@@ -28,4 +48,6 @@ function assert(condition, failMessage) {
 }
 
 // this file
-runTests(ExampleTest)
+var runner = new TestRunner()
+runner.addTest(ExampleTest)
+runner.runTests()
