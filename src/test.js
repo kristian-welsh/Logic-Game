@@ -1,4 +1,29 @@
+// TestFailedError.js
+TestFailedError.prototype = new Error()
+function TestFailedError(message) {
+  this.name = "Test Failed Error"
+  this.message = message || "A test has failed with no message"
+}
+
+// Assert.js
+function Assert() {
+  this.fail = function(message) {
+    message = message || ""
+    throw new TestFailedError(message)
+  }
+
+  this.assertTrue = function(condition, message) {
+    if (!condition)
+      this.fail(message)
+  }
+
+  this.assertFalse = function(condition, message) {
+    assertTrue(!condition, message)
+  }
+}
+
 // TestCase.js
+TestCase.prototype = new Assert()
 function TestCase() {
   this.getTests = function() {
     // overide in subclass to return array of test method names
@@ -25,22 +50,25 @@ function ExampleTest() {
   }
 
   this.test_thingy = function() {
-    assert(false)
+    this.assertTrue(false)
   }
 }
 
 // TestRunner.js
 function TestRunner() {
   var testClasses = []
+  var resultsMessage = ""
 
   this.addTestClass = function(testClass) {
     testClasses.push(testClass)
   }
 
   this.runTests = function() {
+    resultsMessage = ""
     testClasses.forEach(function(testClass) {
       runTestsFromClass(testClass)
     })
+    print(resultsMessage)
   }
 
   function runTestsFromClass(testCaseClass) {
@@ -53,8 +81,20 @@ function TestRunner() {
 
   function runTest(testCase, testName) {
     testCase.setUp()
-    testCase[testName]()
+    runTestRescuingFailures(testCase, testName)
     testCase.tearDown()
+  }
+
+  function runTestRescuingFailures(testCase, testName) {
+    try {
+      testCase[testName]()
+      resultsMessage += "."
+    } catch (error) {
+      if (error instanceof TestFailedError)
+        resultsMessage += "F"
+      else
+        resultsMessage += "E"
+    }
   }
 }
 
@@ -69,6 +109,10 @@ AssertionFailedError.prototype = new Error()
 function assert(condition, failMessage) {
   if(!condition)
     throw new AssertionFailedError(failMessage)
+}
+
+function print(output) {
+  console.log(output)
 }
 
 // this file
