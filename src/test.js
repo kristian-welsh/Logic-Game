@@ -50,25 +50,29 @@ function ExampleTest() {
   }
 
   this.test_thingy = function() {
-    this.assertTrue(false)
+    this.fail("hi")
   }
 }
 
 // TestRunner.js
 function TestRunner() {
   var testClasses = []
-  var resultsMessage = ""
+  var resultBuilder = new ResultBuilder()
 
   this.addTestClass = function(testClass) {
     testClasses.push(testClass)
   }
 
   this.runTests = function() {
-    resultsMessage = ""
+    resultBuilder.clearResult()
+    runRegisteredTests()
+    print(resultBuilder.getResult())
+  }
+  
+  function runRegisteredTests() {
     testClasses.forEach(function(testClass) {
       runTestsFromClass(testClass)
     })
-    print(resultsMessage)
   }
 
   function runTestsFromClass(testCaseClass) {
@@ -88,13 +92,46 @@ function TestRunner() {
   function runTestRescuingFailures(testCase, testName) {
     try {
       testCase[testName]()
-      resultsMessage += "."
+      resultBuilder.addSuccess()
     } catch (error) {
       if (error instanceof TestFailedError)
-        resultsMessage += "F"
+        resultBuilder.addFailure()
       else
-        resultsMessage += "E"
+        resultBuilder.addError()
     }
+  }
+}
+
+// ResultPrinter.js
+function ResultBuilder() {
+  var SUCCESS = "."
+  var FAILURE = "F"
+  var ERROR = "E"
+
+  var result = ""
+
+  this.clearResult = function() {
+    result = ""
+  }
+
+  this.addSuccess = function() {
+    addOutcome(SUCCESS)
+  }
+
+  this.addFailure = function() {
+    addOutcome(FAILURE) 
+  }
+
+  this.addError = function() {
+    addOutcome(ERROR) 
+  }
+
+  function addOutcome(outcome) {
+    result += outcome
+  }
+
+  this.getResult = function() {
+    return result
   }
 }
 
